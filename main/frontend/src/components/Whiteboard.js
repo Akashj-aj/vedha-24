@@ -3,12 +3,17 @@ import { Excalidraw } from '@excalidraw/excalidraw';
 
 const Whiteboard = () => {
   return (
-    <>
-      <h1 style={{ textAlign: "center" }}>Excalidraw Whiteboard</h1>
-      <div style={{ height: "80vh", border: "1px solid #ccc" }}>
-        <Excalidraw />
-      </div>
-    </>
+    <div style={{ 
+      height: "100vh",  // Changed from 80vh to 100vh
+      width: "100vw",   // Added full viewport width
+      margin: 0,        // Remove any margins
+      padding: 0,       // Remove any padding
+      position: "fixed", // Fix position to prevent scrolling
+      top: 0,
+      left: 0
+    }}>
+      <Excalidraw />
+    </div>
   );
 };
 

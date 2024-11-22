@@ -91,15 +91,6 @@ const Login = () => {
         <div className="min-h-screen bg-[rgb(237,241,214)] font-['Tiempos'] flex items-center justify-center p-6 overflow-hidden relative">
             <BackgroundPattern />
             
-            {/* Add the college logo in the top left */}
-            <div className="absolute top-0 left-0 m-6 z-50">
-                <img 
-                    src="/college-logo.png"  // Path to the logo image in the public folder
-                    alt="College Logo" 
-                    className="w-24 h-auto opacity-90" 
-                />
-            </div>
-            
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
