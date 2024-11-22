@@ -1,250 +1,191 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { 
-    FaChalkboardTeacher, 
-    FaBook, 
-    FaGraduationCap, 
-    FaLeaf, 
-    FaUniversity, 
-    FaHome, 
-    FaUsers, 
-    FaSearch,
-    FaBars,
-    FaTimes,
-    FaComments,
-    FaChalkboard,
-    FaBookOpen,
-    FaPaperPlane
-} from 'react-icons/fa';
-import { GiBookshelf, GiPencilBrush, GiMortar, GiOpenBook } from 'react-icons/gi';
+import { FaPaperPlane, FaUsers, FaArrowLeft } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
+// Connect to the backend
 const socket = io('http://localhost:5000');
 
-const NavLink = ({ Icon, text, to, isActive }) => (
-    <Link to={to}>
-        <motion.div
-            whileHover={{ scale: 1.05, x: 10 }}
-            className={`flex items-center gap-3 p-3 cursor-pointer rounded-r-xl transition-all ${
-                isActive 
-                    ? 'bg-white text-[rgb(64,81,59)]' 
-                    : 'text-white hover:bg-white/10'
-            }`}
-        >
-            <Icon className="text-xl" />
-            <span className="font-medium text-sm">{text}</span>
-        </motion.div>
-    </Link>
-);
-
 const Messages = () => {
-    const navigate = useNavigate();
     const location = useLocation();
     const { groupName } = location.state || {};
-    const [activeNav, setActiveNav] = useState('messages');
-    const [isNavOpen, setIsNavOpen] = useState(true);
-    const navRef = useRef(null);
     const [messages, setMessages] = useState([]);
-    const [newMessage, setNewMessage] = useState('');
-    const messagesEndRef = useRef(null);
+    const [message, setMessage] = useState('');
+    const messageEndRef = useRef(null);
+    const textareaRef = useRef(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const adjustTextareaHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'inherit';
+            const computed = window.getComputedStyle(textarea);
+            const height = parseInt(computed.getPropertyValue('border-top-width'), 10)
+                        + parseInt(computed.getPropertyValue('padding-top'), 10)
+                        + textarea.scrollHeight
+                        + parseInt(computed.getPropertyValue('padding-bottom'), 10)
+                        + parseInt(computed.getPropertyValue('border-bottom-width'), 10);
+            
+            textarea.style.height = `${Math.min(Math.max(height, 48), 200)}px`;
+        }
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+        if (!groupName) return;
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (navRef.current && !navRef.current.contains(event.target) && 
-                !event.target.classList.contains('nav-toggle')) {
-                setIsNavOpen(false);
-            }
-        };
+        socket.emit('join', { group_id: groupName });
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
         socket.on('message', (data) => {
-            if (data.groupName === groupName) {
-                setMessages((prevMessages) => [...prevMessages, data]);
+            if (data.group_id === groupName) {
+                setMessages((prev) => [...prev, { 
+                    sender: data.sender, 
+                    text: data.message, 
+                    time: data.time 
+                }]);
             }
         });
 
         return () => {
-            socket.off('message');
+            socket.disconnect();
         };
     }, [groupName]);
 
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [message]);
+
+    const handleMessageChange = (e) => {
+        setMessage(e.target.value);
+    };
+
     const sendMessage = () => {
-        if (newMessage.trim()) {
-            const messageData = {
-                groupName,
-                content: newMessage,
-                sender: 'User',
-                timestamp: new Date().toISOString(),
-            };
-            socket.emit('message', messageData);
-            setMessages((prevMessages) => [...prevMessages, messageData]);
-            setNewMessage('');
+        if (!message.trim()) return;
+
+        const timestamp = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+
+        socket.emit('message', {
+            group_id: groupName,
+            message,
+            sender: 'You',
+            time: timestamp,
+        });
+
+        setMessages((prev) => [...prev, { 
+            sender: 'You', 
+            text: message, 
+            time: timestamp 
+        }]);
+        setMessage('');
+        
+        if (textareaRef.current) {
+            textareaRef.current.style.height = '48px';
         }
     };
 
-    const BackgroundPattern = () => {
-        const backgroundIcons = [
-            FaBook, FaLeaf, GiBookshelf, GiPencilBrush, GiMortar, 
-            FaUniversity, GiOpenBook, FaBookOpen
-        ];
-
-        const elements = Array.from({ length: 100 }).map((_, index) => {
-            const isBig = index < 10;
-            return {
-                id: index,
-                Icon: backgroundIcons[index % backgroundIcons.length],
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                rotation: Math.random() * 360,
-                scale: isBig ? (0.8 + Math.random() * 0.4) : (0.3 + Math.random() * 0.5)
-            };
-        });
-
-        return (
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                {elements.map((element) => (
-                    <element.Icon
-                        key={element.id}
-                        style={{
-                            position: 'absolute',
-                            left: `${element.x}%`,
-                            top: `${element.y}%`,
-                            transform: `rotate(${element.rotation}deg) scale(${element.scale})`,
-                            color: 'rgb(64,81,59)',
-                            opacity: 0.15
-                        }}
-                        className="text-4xl"
-                    />
-                ))}
-            </div>
-        );
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     };
+
+    useEffect(() => {
+        messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     if (!groupName) {
         return (
-            <div className="min-h-screen bg-[rgb(237,241,214)] font-['Tiempos'] flex items-center justify-center p-6">
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white/95 backdrop-blur-lg p-8 rounded-3xl shadow-2xl text-center"
-                >
-                    <FaComments className="text-4xl text-[rgb(64,81,59)] mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-[rgb(64,81,59)] mb-2">No Group Selected</h1>
-                    <p className="text-[rgb(96,153,102)]">Please select a group to start chatting.</p>
-                </motion.div>
+            <div className="min-h-screen bg-[rgb(237,241,214)] font-['Tiempos'] flex items-center justify-center">
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-md">
+                    <h2 className="text-2xl text-[rgb(64,81,59)] mb-4">No group selected</h2>
+                    <Link 
+                        to="/study-groups" 
+                        className="text-[rgb(96,153,102)] hover:text-[rgb(64,81,59)] flex items-center"
+                    >
+                        <FaArrowLeft className="mr-2" /> Return to Study Groups
+                    </Link>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[rgb(237,241,214)] font-['Tiempos'] flex items-center justify-center p-6 overflow-hidden relative">
-            <BackgroundPattern />
-
-            <AnimatePresence>
-                {isNavOpen && (
-                    <motion.div 
-                        ref={navRef}
-                        initial={{ x: -300 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -300 }}
-                        transition={{ duration: 0.5, type: "spring" }}
-                        className="fixed left-4 top-0 h-full w-64 bg-gradient-to-b from-[rgb(96,153,102)] to-[rgb(64,81,59)] shadow-xl z-40 flex flex-col py-6 overflow-y-auto"
+        <div className="min-h-screen bg-[rgb(237,241,214)] font-['Tiempos']">
+            <nav className="bg-white/90 backdrop-blur-sm shadow-md fixed top-0 left-0 w-full z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+                    <span className="text-xl font-bold text-[rgb(64,81,59)]">
+                        {groupName}
+                    </span>
+                    <Link 
+                        to="/study-groups" 
+                        className="text-[rgb(64,81,59)] hover:text-[rgb(96,153,102)] flex items-center"
                     >
-                        <div className="space-y-1">
-                            <NavLink Icon={FaHome} text="Home" to="/home" isActive={activeNav === 'home'} />
-                            <NavLink Icon={FaChalkboardTeacher} text="Become a Tutor" to="/become-tutor" isActive={activeNav === 'become-tutor'} />
-                            <NavLink Icon={FaSearch} text="Find Tutor" to="/find-tutor" isActive={activeNav === 'find-tutor'} />
-                            <NavLink Icon={FaUsers} text="Create Study Group" to="/create-study-group" isActive={activeNav === 'create-study-group'} />
-                            <NavLink Icon={FaUsers} text="Study Groups" to="/study-groups" isActive={activeNav === 'study-groups'} />
-                            <NavLink Icon={FaUsers} text="View Your Groups" to="/view-your-groups" isActive={activeNav === 'view-your-groups'} />
-                            <NavLink Icon={FaUsers} text="Group Details" to="/group-details" isActive={activeNav === 'group-details'} />
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <motion.button
-                initial={{ x: isNavOpen ? 256 : 0 }}
-                animate={{ x: isNavOpen ? 256 : 0 }}
-                transition={{ duration: 0.5, type: "spring" }}
-                onClick={() => setIsNavOpen(!isNavOpen)}
-                className="fixed left-4 top-6 z-50 bg-white w-12 h-12 rounded-full text-[rgb(64,81,59)] shadow-lg nav-toggle hover:bg-gray-50 transition-colors duration-300 flex items-center justify-center drop-shadow-xl"
-            >
-                {isNavOpen ? (
-                    <FaTimes className="text-xl" />
-                ) : (
-                    <FaBars className="text-xl" />
-                )}
-            </motion.button>
-
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className={`w-full max-w-2xl bg-white/95 backdrop-blur-lg shadow-2xl rounded-3xl overflow-hidden relative z-10 font-['Tiempos'] ${isNavOpen ? 'ml-64' : 'ml-0'} transition-all duration-500`}
-            >
-                <div className="bg-gradient-to-r from-[rgb(96,153,102)] to-[rgb(64,81,59)] p-6 text-center relative">
-                    <FaComments className="absolute left-6 top-1/2 transform -translate-y-1/2 text-white text-4xl" />
-                    <h1 className="text-3xl font-bold text-white tracking-wider">{groupName} Chat</h1>
+                        <FaArrowLeft className="mr-2" /> Back
+                    </Link>
                 </div>
+            </nav>
 
-                <div className="p-6 flex flex-col h-[600px]">
-                    <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-                        {messages.map((msg, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}
+            <div className="container mx-auto pt-20 px-4 lg:px-8 flex flex-col h-screen">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex-grow bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 mb-4 overflow-y-auto"
+                >
+                    <div className="space-y-4">
+                        {messages.map((msg, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className={`max-w-[70%] p-4 rounded-2xl shadow-md ${
-                                    msg.sender === 'User'
-                                        ? 'bg-[rgb(96,153,102)] text-white'
-                                        : 'bg-[rgb(237,241,214)] text-[rgb(64,81,59)]'
-                                }`}>
-                                    <p className="mb-1">{msg.content}</p>
-                                    <p className="text-xs opacity-70">
-                                        {new Date(msg.timestamp).toLocaleTimeString()}
-                                    </p>
+                                <div
+                                    className={`max-w-md px-4 py-2 rounded-lg ${
+                                        msg.sender === 'You'
+                                            ? 'bg-[rgb(96,153,102)] text-white'
+                                            : 'bg-[rgb(237,241,214)] text-[rgb(64,81,59)]'
+                                    }`}
+                                >
+                                    <div className="font-semibold mb-1">{msg.sender}</div>
+                                    <div className="break-words">{msg.text}</div>
+                                    <div className={`text-xs mt-1 ${
+                                        msg.sender === 'You' ? 'text-white/70' : 'text-[rgb(64,81,59)]/70'
+                                    }`}>
+                                        {msg.time}
+                                    </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))}
-                        <div ref={messagesEndRef} />
+                        <div ref={messageEndRef} />
                     </div>
+                </motion.div>
 
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4 mb-4">
+                    <div className="flex flex-col space-y-2">
+                        <textarea
+                            ref={textareaRef}
+                            value={message}
+                            onChange={handleMessageChange}
+                            onKeyDown={handleKeyPress}
                             placeholder="Type your message..."
-                            className="flex-1 px-4 py-3 rounded-xl bg-[rgb(237,241,214)] text-[rgb(64,81,59)] placeholder-[rgb(64,81,59)]/50 focus:outline-none focus:ring-2 focus:ring-[rgb(96,153,102)]"
+                            className="w-full px-4 py-3 bg-[rgb(237,241,214)]/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(96,153,102)] resize-none overflow-hidden"
+                            style={{
+                                minHeight: '100px',
+                                maxHeight: '200px',
+                                height: '100px'
+                            }}
                         />
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                        <button
                             onClick={sendMessage}
-                            className="px-6 py-3 bg-gradient-to-r from-[rgb(96,153,102)] to-[rgb(64,81,59)] text-white rounded-xl hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
+                            className="bg-[rgb(96,153,102)] text-white py-3 rounded-lg hover:bg-[rgb(64,81,59)] transition flex items-center justify-center gap-2 font-semibold"
                         >
-                            <FaPaperPlane /> Send
-                        </motion.button>
+                            <FaPaperPlane /> Send Message
+                        </button>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };

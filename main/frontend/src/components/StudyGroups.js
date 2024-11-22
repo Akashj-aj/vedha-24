@@ -226,15 +226,16 @@ const StudyGroups = () => {
 
                 <div className="text-center mt-8 mb-8">
                     <Link to="/create-study-group">
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="bg-gradient-to-r from-[rgb(96,153,102)] to-[rgb(64,81,59)] text-white py-3 px-6 rounded-lg shadow-lg"
-                        >
-                            Create a New Study Group
-                        </motion.button>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="bg-gradient-to-r from-[rgb(96,153,102)] to-[rgb(64,81,59)] text-white py-3 px-6 rounded-lg shadow-lg max-w-xs w-full"
+                    >
+                    Create a New Study Group
+                    </motion.button>
                     </Link>
                 </div>
+
             </motion.div>
         </div>
     );

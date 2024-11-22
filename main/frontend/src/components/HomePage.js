@@ -10,7 +10,9 @@ import {
     FaTimes,
     FaComments,
     FaChalkboard,
-    FaBookOpen
+    FaBookOpen,
+    FaFileAlt,
+    FaClipboardCheck
 } from 'react-icons/fa';
 import { GiBookshelf, GiPencilBrush, GiMortar, GiOpenBook } from 'react-icons/gi';
 
@@ -117,6 +119,18 @@ const HomePage = () => {
             icon: GiPencilBrush,
             description: 'Share your knowledge and help others learn',
             route: '/become-tutor'
+        },
+        {
+            name: 'Career Resources',
+            icon: FaFileAlt,
+            description: 'Get resume help and career guidance from experts',
+            route: '/career-resources'
+        },
+        {
+            name: 'Assignment Feedback',
+            icon: FaClipboardCheck,
+            description: 'Submit your work and receive detailed feedback',
+            route: '/assignment-feedback'
         }
     ];
 
@@ -142,6 +156,8 @@ const HomePage = () => {
                             <NavLink Icon={FaUsers} text="Create Study Group" to="/create-study-group" isActive={activeNav === 'create-study-group'} />
                             <NavLink Icon={FaUsers} text="Study Groups" to="/study-groups" isActive={activeNav === 'study-groups'} />
                             <NavLink Icon={FaUsers} text="View Your Groups" to="/view-your-groups" isActive={activeNav === 'view-your-groups'} />
+                            <NavLink Icon={FaFileAlt} text="Career Resources" to="/career-resources" isActive={activeNav === 'career-resources'} />
+                            <NavLink Icon={FaClipboardCheck} text="Assignment Feedback" to="/assignment-feedback" isActive={activeNav === 'assignment-feedback'} />
                         </div>
                     </motion.div>
                 )}

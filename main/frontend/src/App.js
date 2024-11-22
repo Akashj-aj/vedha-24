@@ -12,7 +12,8 @@ import Whiteboard from './components/Whiteboard';
 import Messages from './components/Messages';
 import GroupDetailsPage from './components/GroupDetailsPage';
 import ViewYourGroups from './components/ViewYourGroups'; 
-
+import CareerResources from './components/CareerResources';
+import AssignmentFeedback from './components/AssignmentFeedback';
 const App = () => (
     <Router>
         <div>
@@ -30,6 +31,8 @@ const App = () => (
                 <Route path="/whiteboard" element={<Whiteboard />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/view-your-groups" element={<ViewYourGroups />} />  {/* New route */}
+                <Route path="/career-resources" element={<CareerResources/>} /> 
+                <Route path="/assignment-feedback" element={<AssignmentFeedback/>}/>
             </Routes>
         </div>
     </Router>
